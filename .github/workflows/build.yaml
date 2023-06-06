@@ -1,0 +1,52 @@
+name: build
+
+on:
+  push:
+
+env:
+  BUILD_TYPE: Release
+  SK_VERSION: nover
+
+
+jobs:
+  build-linux:
+    runs-on: ubuntu-22.04
+    env:
+      CC: gcc-12
+      CXX: g++-12
+
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          submodules: recursive
+          fetch-depth: 0
+
+      - name: Configure stuff
+        run: |
+          sudo apt install zstd g++-12 libglew-dev libglfw3-dev
+          mkdir ${{github.workspace}}/build
+          cd ${{github.workspace}}/build
+          cmake -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DCMAKE_INSTALL_PREFIX=${{github.workspace}}/tmp ..
+          echo "SK_VERSION=$(cat version)" >> $GITHUB_ENV
+
+      - name: Build
+        working-directory: ${{github.workspace}}/build
+        run: cmake --build . -j 6
+
+      - name: Install
+        working-directory: ${{github.workspace}}/build
+        run: |
+          cmake --build . --target install
+          cd ${{github.workspace}}/tmp
+          tar -cvaf ../ImSpike-v${{env.SK_VERSION}}-linux-amd64.tar.xz .
+
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: ImSpike-linux-amd64
+          path: ${{github.workspace}}/ImSpike-v${{env.SK_VERSION}}-linux-amd64.tar.xz
+          retention-days: 5

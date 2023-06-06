@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.3)
 
 set(CMAKE_CXX_STANDARD 23)
-project(ImSpike VERSION 1.0)
+project(ImSpike)
 set(CMAKE_SKIP_BUILD_RPATH FALSE)
 set(CMAKE_INSTALL_RPATH "$ORIGIN/lib;${CMAKE_INSTALL_RPATH}")
 set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
@@ -19,6 +19,8 @@ set(NO_OBJECTS
 
 add_subdirectory(precore)
 include(targetex)
+include(version)
+toolset_version()
 
 add_subdirectory(precore/gltf)
 add_subdirectory(imgui)
@@ -41,6 +43,7 @@ build_target(
   src/modules.cpp
   src/batch.cpp
   src/ui_stack.cpp
+  src/exec.cpp
 
   precore/spike/out_context.cpp
   precore/spike/in_context.cpp
@@ -66,3 +69,9 @@ build_target(
   START_YEAR
   2023
 )
+
+install(
+  TARGETS imspike
+  RUNTIME DESTINATION ".")
+
+install(FILES ${CMAKE_SOURCE_DIR}/LICENSE DESTINATION ".")

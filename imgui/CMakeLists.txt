@@ -14,3 +14,8 @@ add_library(
 
 target_link_libraries(ImGui INTERFACE dl)
 target_include_directories(ImGui INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})
+
+install(
+  FILES font_awesome4/font.ttf font_awesome4/LICENSE
+  DESTINATION font_awesome4
+)

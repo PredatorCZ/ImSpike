@@ -682,8 +682,7 @@ struct ModulesContextImpl : ModulesContext {
     es::Dispose(moduleCtx);
     refreshProcessing = true;
     refreshFuture =
-        std::async(std::launch::async, ScanModules,
-                   "/home/lukas/github/reviltoolset" /*appFolder*/, appName);
+        std::async(std::launch::async, ScanModules, appFolder, appName);
   }
 };
 } // namespace
@@ -851,6 +850,38 @@ void Modules(ModulesContext &ctx_, std::vector<Queue> &queue) {
   ImGui::EndTable();
 
   ImGui::End();
+}
+
+void ModuleInfos(ModulesContext &ctx_) {
+  ModulesContextImpl &ctx = static_cast<ModulesContextImpl &>(ctx_);
+  const float height = ImGui::GetWindowHeight();
+  ImGui::BeginChild("ModulesInfoFrame", {0, height - 120.f}, true);
+  ImGui::BeginTable("ModulesInfoTbl", 1,
+                    ImGuiTableFlags_NoSavedSettings | ImGuiTableFlags_Borders);
+  static size_t selectIndex = -1;
+  size_t curIndex = 0;
+
+  for (auto &m : ctx.modules) {
+    ImGui::TableNextColumn();
+    ImGui::PushID(curIndex);
+    if (ImGui::Selectable(m.descrVersion.data(), curIndex == selectIndex)) {
+      selectIndex = curIndex;
+    }
+    ImGui::PopID();
+
+    curIndex++;
+  }
+
+  ImGui::EndTable();
+  ImGui::EndChild();
+
+  if (selectIndex < ctx.modules.size()) {
+    auto &selectedModule = ctx.modules.at(selectIndex);
+
+    ImGui::TextWrapped("Path: %s%s.*.spk", selectedModule.folder.c_str(),
+                       selectedModule.module.c_str());
+    ImGui::Text("Copyright: %s", selectedModule.copyright.data());
+  }
 }
 
 std::unique_ptr<ModulesContext> CreateModulesContext(std::string appPath) {

@@ -36,6 +36,46 @@
 
 #include "font_awesome4/definitions.h"
 #include "main.hpp"
+#include "project.h"
+
+namespace ImGui {
+bool Link(const char *label, ImGuiButtonFlags flags = 0) {
+  ImGuiWindow *window = GetCurrentWindow();
+
+  if (window->SkipItems) {
+    return false;
+  }
+
+  const ImVec2 labelSize = CalcTextSize(label, nullptr, true);
+  const ImVec2 cursorPos = window->DC.CursorPos;
+  const ImRect bb(cursorPos, cursorPos + labelSize);
+  const ImGuiID id = window->GetID(label);
+
+  if (!ItemAdd(bb, id)) {
+    return false;
+  }
+
+  bool hovered;
+  bool pressed = ButtonBehavior(bb, id, &hovered, nullptr, flags);
+
+  const ImColor textColor = hovered ? GetColorU32(ImGuiCol_ButtonHovered)
+                                    : GetColorU32(ImGuiCol_ButtonActive);
+  TextColored(textColor, "%s", label);
+  GetWindowDrawList()->AddLine(ImVec2(cursorPos.x, cursorPos.y + labelSize.y),
+                               bb.Max, textColor);
+
+  return pressed;
+}
+
+void TextCentered(const char *text) {
+  auto windowWidth = ImGui::GetWindowWidth();
+  auto textWidth = ImGui::CalcTextSize(text).x;
+
+  ImGui::SetCursorPosX((windowWidth - textWidth) * 0.5f);
+  ImGui::TextUnformatted(text, ImGui::FindRenderedTextEnd(text));
+}
+
+} // namespace ImGui
 
 int _tmain(int argc, TCHAR *argv[]) {
   InitLogs();
@@ -58,8 +98,8 @@ int _tmain(int argc, TCHAR *argv[]) {
   GLFWState gstate;
   LoadSettings(gstate, settingsDoc);
 
-  GLFWwindow *window = glfwCreateWindow(gstate.width, gstate.height, "ImSpike",
-                                        nullptr, nullptr);
+  GLFWwindow *window = glfwCreateWindow(gstate.width, gstate.height,
+                                        ImSpike_PRODUCT_NAME, nullptr, nullptr);
 
   if (!window) {
     glfwTerminate();
@@ -96,14 +136,15 @@ int _tmain(int argc, TCHAR *argv[]) {
   ImFontConfig icons_config;
   icons_config.MergeMode = true;
   icons_config.PixelSnapH = true;
-  io.Fonts->AddFontFromFileTTF("imgui/font_awesome4/font.ttf", 13,
-                               &icons_config, icons_ranges);
+  io.Fonts->AddFontFromFileTTF("font_awesome4/font.ttf", 13, &icons_config,
+                               icons_ranges);
 
   LoadSettings(*g, settingsDoc);
 
   auto mounts = CreateMountsContext();
 
   std::vector<Queue> queue;
+  bool openedAbout = false;
 
   while (!glfwWindowShouldClose(window)) {
     if (g->IO.WantSaveIniSettings) {
@@ -117,7 +158,7 @@ int _tmain(int argc, TCHAR *argv[]) {
     ImGui_ImplGlfw_NewFrame();
     ImGui::NewFrame();
 
-    ImGui::ShowDemoWindow();
+    // ImGui::ShowDemoWindow();
 
     ImGuiViewport *viewport = ImGui::GetMainViewport();
     ImGui::SetNextWindowPos(viewport->WorkPos);
@@ -134,6 +175,54 @@ int _tmain(int argc, TCHAR *argv[]) {
         ImGuiWindowFlags_NoScrollWithMouse | ImGuiWindowFlags_NoBackground;
     ImGui::Begin("EditorWindow", nullptr, windowFlags);
     ImGui::PopStyleVar(3);
+
+    if (openedAbout && !ImGui::IsPopupOpen("About##popup")) {
+      ImGui::OpenPopup("About##popup");
+    }
+
+    ImGui::SetNextWindowSize(ImVec2(500, 300), ImGuiCond_Always);
+    if (ImGui::BeginPopupModal("About##popup", &openedAbout,
+                               ImGuiWindowFlags_NoResize)) {
+      if (ImGui::IsKeyDown(ImGui::GetKeyIndex(ImGuiKey_Escape))) {
+        ImGui::CloseCurrentPopup();
+        openedAbout = false;
+      }
+
+      ImGui::BeginTabBar("About Tabs");
+
+      if (ImGui::BeginTabItem("Info")) {
+        ImGui::TextCentered(ImSpike_PRODUCT_NAME " V" ImSpike_VERSION);
+        ImGui::TextCentered(ImSpike_COPYRIGHT "Lukas Cone");
+        ImGui::TextCentered(ImSpike_PRODUCT_NAME
+                            " is licensed under GNU GPL v3");
+        ImGui::TextCentered("Github repository:##" ImSpike_PRODUCT_NAME);
+        ImGui::SameLine();
+        if (ImGui::Link(ImSpike_PRODUCT_NAME)) {
+          OpenInBrowser("https://github.com/PredatorCZ/ImSpike");
+        }
+        ImGui::EndTabItem();
+      }
+
+      if (ImGui::BeginTabItem("Modules")) {
+        ModuleInfos(*modules);
+        ImGui::EndTabItem();
+      }
+
+      ImGui::EndTabBar();
+
+      ImGui::EndPopup();
+    }
+
+    if (ImGui::BeginMenuBar()) {
+      if (ImGui::BeginMenu("Help")) {
+        if (ImGui::MenuItem("About")) {
+          openedAbout = true;
+        }
+        ImGui::EndMenu();
+      }
+    }
+    ImGui::EndMenuBar();
+
     ImGuiID dockId = ImGui::GetID("EditorDockSpace");
     ImGui::DockSpace(dockId, {}, ImGuiDockNodeFlags_NoWindowMenuButton);
     static auto first_time = true;

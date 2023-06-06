@@ -54,6 +54,7 @@ struct ModulesContext {
 };
 
 void Modules(ModulesContext &ctx, std::vector<Queue> &queue);
+void ModuleInfos(ModulesContext &ctx);
 std::unique_ptr<ModulesContext> CreateModulesContext(std::string appPath);
 
 namespace ImGui {
@@ -62,3 +63,4 @@ bool Spinner(const char *label, float radius, int thickness, const ImU32 &color,
 }
 
 bool UIStack(bool isDone);
+void OpenInBrowser(const std::string &url);

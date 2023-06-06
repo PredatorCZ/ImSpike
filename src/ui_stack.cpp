@@ -64,7 +64,7 @@ bool UIStack(bool isDone) {
     ImGui::OpenPopup("##UISTACK");
   }
 
-  if (!ImGui::BeginPopupModal("##UISTACK", nullptr)) {
+  if (!ImGui::BeginPopupModal("##UISTACK")) {
     return false;
   }
 
